@@ -1,0 +1,187 @@
+# ==========================================
+# ARGUS CONFIGURATION
+# ==========================================
+
+app:
+  name: "Argus"
+  version: "1.0.0"
+  environment: "development"   # development | production
+  log_level: "INFO"            # DEBUG | INFO | WARNING | ERROR
+
+# ------------------------------------------
+# Monitoring — tuned for fast simulation feedback
+# ------------------------------------------
+monitoring:
+  interval_seconds: 2          # fast tick in simulation mode
+  retention_days: 30
+  warmup_samples: 2
+
+# ------------------------------------------
+# Thresholds (rules engine)
+# ------------------------------------------
+thresholds:
+  cpu:
+    warning: 70
+    critical: 85
+    sustained_seconds: 3       # fire in ~3s
+  memory:
+    warning: 78
+    critical: 90
+    sustained_seconds: 3
+  disk:
+    warning: 85
+    critical: 95
+    sustained_seconds: 3
+  processes:
+    warning: 320
+    critical: 420
+  network:
+    connection_warning: 150
+    connection_critical: 300
+
+# ------------------------------------------
+# Actions
+# ------------------------------------------
+actions:
+  auto_kill_enabled: true
+  auto_clear_temp: true
+  kill_confirmation_required: false
+  cooldown_seconds: 3          # fast response
+  ai_advisor_enabled: true     # use LLM for decision recommendations
+  ai_verify_after_action: true # ask AI if problem is actually solved
+
+# Never touch these processes
+safety_list:
+  - System
+  - System Idle Process
+  - Registry
+  - smss.exe
+  - csrss.exe
+  - wininit.exe
+  - services.exe
+  - lsass.exe
+  - svchost.exe
+  - explorer.exe
+  - dwm.exe
+  - python.exe
+  - pythonw.exe
+  - MsMpEng.exe          # Windows Defender
+  - NisSrv.exe
+  - SecurityHealthService.exe
+  - conhost.exe
+  - fontdrvhost.exe
+  - spoolsv.exe
+  - winlogon.exe
+  # IDE / shell / dev tools — don't kill user's work
+  - claude.exe
+  - Code.exe
+  - cursor.exe
+  - WindowsTerminal.exe
+  - cmd.exe
+  - powershell.exe
+  - bash.exe
+  - git-bash.exe
+  - node.exe
+  - chrome.exe
+  - msedge.exe
+  - firefox.exe
+  - brave.exe
+
+# ------------------------------------------
+# AI Settings
+# ------------------------------------------
+ai:
+  enabled: true
+  engine: "isolation_forest"   # isolation_forest | ensemble (IF + LSTM)
+  auto_retrain_hours: 72
+  min_samples_for_training: 1000
+  anomaly_threshold: 0.7
+  contamination: 0.05
+  use_shap_explanations: true  # explain WHY flagged
+
+# ------------------------------------------
+# Security Watchers (Argus-specific)
+# ------------------------------------------
+security:
+  process_genealogy: true      # track parent-child relationships
+  network_watcher: true        # unusual connections/ports
+  file_integrity: true         # monitor critical folders
+  registry_watcher: true       # HKLM Run keys etc.
+  usb_monitor: true            # track device plug/unplug
+
+  # Folders to watch for file integrity
+  watched_folders:
+    - "C:\\Windows\\System32\\drivers"
+    - "C:\\Windows\\System32\\config"
+
+  # Suspicious ports (crypto mining, C2)
+  suspicious_ports:
+    - 3333   # monero
+    - 4444   # common C2
+    - 8333   # bitcoin
+    - 14444  # monero alt
+    - 5555   # ADB / C2
+
+  # Suspicious parent-child patterns
+  suspicious_chains:
+    - ["explorer.exe", "cmd.exe", "powershell.exe"]
+    - ["winword.exe", "cmd.exe"]
+    - ["excel.exe", "powershell.exe"]
+
+# ------------------------------------------
+# Dashboards
+# ------------------------------------------
+dashboards:
+  defender_port: 8000
+  attacker_port: 8001
+  host: "127.0.0.1"
+  auth_enabled: false          # set true in production
+  auth_token: "change-me-in-production"
+
+# ------------------------------------------
+# Attack safety limits
+# ------------------------------------------
+attacks:
+  max_duration_seconds: 300
+  max_ram_mb: 2000
+  max_disk_mb: 1000
+  max_cpu_cores: 4
+  max_threads: 500
+  max_sockets: 500
+  max_file_handles: 500
+  max_processes_fork_bomb: 30
+  kill_switch_hotkey: "ctrl+shift+q"
+  workspace_folder: "attacker/attack_workspace"
+
+# ------------------------------------------
+# Notifications
+# ------------------------------------------
+notifications:
+  windows_toast: true
+  console_output: true
+  log_file: "logs/argus.log"
+
+  # Multi-channel alerts (enable as needed)
+  telegram:
+    enabled: false
+    bot_token: ""
+    chat_id: ""
+
+  discord:
+    enabled: false
+    webhook_url: ""
+
+  email:
+    enabled: false
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 587
+    username: ""
+    password: ""
+    recipients: []
+
+# ------------------------------------------
+# Feedback loop (false positive correction)
+# ------------------------------------------
+feedback:
+  enabled: true
+  min_feedback_for_retrain: 20
